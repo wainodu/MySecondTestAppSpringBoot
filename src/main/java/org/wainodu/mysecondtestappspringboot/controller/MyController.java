@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.wainodu.mysecondtestappspringboot.exception.UnsupportedCodeException;
 import org.wainodu.mysecondtestappspringboot.exception.ValidationFailedException;
 import org.wainodu.mysecondtestappspringboot.model.*;
-import org.wainodu.mysecondtestappspringboot.service.ModifyResponseService;
-import org.wainodu.mysecondtestappspringboot.service.UnsupportedCodeValidationService;
-import org.wainodu.mysecondtestappspringboot.service.ValidationService;
+import org.wainodu.mysecondtestappspringboot.service.*;
 import org.wainodu.mysecondtestappspringboot.util.DateTimeUtil;
 
 
@@ -27,13 +25,20 @@ public class MyController {
     private final ValidationService validationService;
     private final UnsupportedCodeValidationService unsupportedCodeValidationService;
     private final ModifyResponseService modifyResponseService;
+    private final ModifySourceRequestService modifySourceRequestService;
+    private final ModifySystemNameRequestService modifySystemNameRequestService;
+
 
     @Autowired
     public MyController(ValidationService validationService, UnsupportedCodeValidationService unsupportedCodeValidationService,
-                        @Qualifier("ModifySystemTimeResponseService") ModifyResponseService modifyResponseService) {
+                        @Qualifier("ModifySystemTimeResponseService") ModifyResponseService modifyResponseService,
+                        ModifySourceRequestService modifySourceRequestService,
+                        ModifySystemNameRequestService modifySystemNameRequestService) {
         this.validationService = validationService;
         this.unsupportedCodeValidationService = unsupportedCodeValidationService;
         this.modifyResponseService = modifyResponseService;
+        this.modifySourceRequestService = modifySourceRequestService;
+        this.modifySystemNameRequestService = modifySystemNameRequestService;
     }
 
     @PostMapping(value = "/feedback")
@@ -82,6 +87,9 @@ public class MyController {
             response.setErrorMessage(ErrorMessages.UNKNOWN);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        modifyResponseService.modify(response);
+        modifySourceRequestService.modify(request);
+        modifySystemNameRequestService.modify(request);
+        return new ResponseEntity<>(modifyResponseService.modify(response), HttpStatus.OK);
     }
 }
