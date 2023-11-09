@@ -27,18 +27,24 @@ public class MyController {
     private final ModifyResponseService modifyResponseService;
     private final ModifySourceRequestService modifySourceRequestService;
     private final ModifySystemNameRequestService modifySystemNameRequestService;
+    private final AnnualBonusServiceImpl annualBonusService;
+    private final QuarterBonusServiceImpl quarterBonusService;
 
 
     @Autowired
     public MyController(ValidationService validationService, UnsupportedCodeValidationService unsupportedCodeValidationService,
                         @Qualifier("ModifySystemTimeResponseService") ModifyResponseService modifyResponseService,
                         ModifySourceRequestService modifySourceRequestService,
-                        ModifySystemNameRequestService modifySystemNameRequestService) {
+                        ModifySystemNameRequestService modifySystemNameRequestService,
+                        AnnualBonusServiceImpl annualBonusService,
+                        QuarterBonusServiceImpl quarterBonusService) {
         this.validationService = validationService;
         this.unsupportedCodeValidationService = unsupportedCodeValidationService;
         this.modifyResponseService = modifyResponseService;
         this.modifySourceRequestService = modifySourceRequestService;
         this.modifySystemNameRequestService = modifySystemNameRequestService;
+        this.annualBonusService = annualBonusService;
+        this.quarterBonusService = quarterBonusService;
     }
 
     @PostMapping(value = "/feedback")
@@ -88,8 +94,27 @@ public class MyController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         modifyResponseService.modify(response);
-        modifySourceRequestService.modify(request);
-        modifySystemNameRequestService.modify(request);
+//        это для прошлой лабы
+//        modifySourceRequestService.modify(request);
+//        modifySystemNameRequestService.modify(request);
+
+        Double annualBonus = annualBonusService.calculate(request.getPosition(),
+                request.getSalary(),
+                request.getBonus(),
+                request.getWorkDays());
+
+        Double quarterBonus = quarterBonusService.calculate(request.getPosition(),
+                request.getSalary(),
+                request.getBonus(),
+                request.getWorkDays(),
+                request.getQuarterNumber());
+
+        if (annualBonus > quarterBonus) {
+            response.setBonus(annualBonus);
+        } else {
+            response.setBonus(quarterBonus);
+        }
+
         return new ResponseEntity<>(modifyResponseService.modify(response), HttpStatus.OK);
     }
 }
